@@ -169,7 +169,8 @@ var questions = [
 var lang='en', current=0, score=0, answered=false;
 
 function buildSidebars(){
-  var seeds=[[10,23,47,82],[15,63,91,38]];
+  var PHOTOS_LEFT = [ 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Maksimovsky_rock_Chusovaya_river.jpg/500px-Maksimovsky_rock_Chusovaya_river.jpg', 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Vishera.jpg/500px-Vishera.jpg', 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Salt_dump_in_Solikamsk.jpg/500px-Salt_dump_in_Solikamsk.jpg', 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Kungur_asv2019-05_img26_Ice_Cave.jpg/500px-Kungur_asv2019-05_img26_Ice_Cave.jpg' ]; 
+  var PHOTOS_RIGHT = [ 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Khokhlovka.jpg/500px-Khokhlovka.jpg', 'https://commons.wikimedia.org/wiki/File:%D0%A0%D0%BE%D0%B6%D0%B4%D0%B5%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D1%81%D0%BA%D0%BE%D0%B5_%D1%83%D1%82%D1%80%D0%BE_%D0%BD%D0%B0_%D0%91%D0%B5%D0%BB%D0%BE%D0%B9_%D0%B3%D0%BE%D1%80%D0%B5.jpg#/media/File:%D0%A0%D0%BE%D0%B6%D0%B4%D0%B5%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D1%81%D0%BA%D0%BE%D0%B5_%D1%83%D1%82%D1%80%D0%BE_%D0%BD%D0%B0_%D0%91%D0%B5%D0%BB%D0%BE%D0%B9_%D0%B3%D0%BE%D1%80%D0%B5.jpg', 'https://a.d-cd.net/KKjIGkLQGnovG48JrDkaOHir9_Y-1920.jpg', 'https://i.ytimg.com/vi/w3iYs4CsjKM/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AHUBoAC4AOKAgwIABABGHIgXyg9MA8=&amp;rs=AOn4CLDGCP0pPdBEuX1FrnjoHXJJi5vb2w' ];
   ['sidebar-left','sidebar-right'].forEach(function(id,si){
     var el=document.getElementById(id);
     el.innerHTML='';
@@ -185,7 +186,7 @@ function buildSidebars(){
       var img=document.createElement('img');
       img.alt='Perm';
       (function(imgEl,skelEl,seed){
-        imgEl.src='https://picsum.photos/seed/'+seed+'/400/600';
+        imgEl.src = (si===0 ? PHOTOS_LEFT : PHOTOS_RIGHT)[i];
         imgEl.onload=function(){imgEl.classList.add('loaded');skelEl.style.display='none'};
       })(img,skel,seeds[si][i]);
       slot.appendChild(img);
