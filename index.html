@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Perm Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--gold:#d4a017;--gold-light:#f0c84a;--gold-dim:rgba(212,160,23,0.18);--bg:#0e1220;--surface:rgba(255,255,255,0.055);--border:rgba(255,255,255,0.11);--text:#f0ede8;--text-muted:rgba(240,237,232,0.58);--text-dim:rgba(240,237,232,0.38);--green-bg:rgba(46,168,90,0.15);--green-border:rgba(46,168,90,0.4);--red-bg:rgba(224,82,82,0.13);--red-border:rgba(224,82,82,0.35)}
+html,body{min-height:100%}
+body{min-height:100vh;background:radial-gradient(ellipse 80% 55% at 12% 8%,rgba(212,160,23,0.09) 0%,transparent 60%),radial-gradient(ellipse 65% 50% at 88% 82%,rgba(30,80,200,0.1) 0%,transparent 60%),#0e1220;color:var(--text);font-family:'Manrope',sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.page-layout{display:grid;grid-template-columns:1fr;min-height:100vh;align-items:start}
+.sidebar{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+.sidebar-photo{flex:1;position:relative;overflow:hidden;background:#0a0f1c}
+.sidebar-photo img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.8s ease;display:block}
+.sidebar-photo img.loaded{opacity:0.72}
+.sidebar.left .photo-overlay{position:absolute;inset:0;background:linear-gradient(to right,#0e1220 0%,transparent 55%);pointer-events:none;z-index:2}
+.sidebar.right .photo-overlay{position:absolute;inset:0;background:linear-gradient(to left,#0e1220 0%,transparent 55%);pointer-events:none;z-index:2}
+.photo-caption{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:10px;color:rgba(240,237,232,0.3);letter-spacing:0.06em;text-transform:uppercase;z-index:3;padding:0 6px;line-height:1.4}
+.photo-skeleton{position:absolute;inset:0;background:linear-gradient(110deg,#111827 30%,#1a2234 50%,#111827 70%);background-size:200% 100%;animation:shimmer 1.8s infinite;z-index:1}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media(max-width:900px){.page-layout{grid-template-columns:1fr}.sidebar{display:none}.main-col{padding:28px 16px 60px!important}}
+.main-col{padding:36px 24px 64px;max-width:640px;margin:0 auto;width:100%}
+.lang-bar{display:flex;justify-content:flex-end;gap:8px;margin-bottom:28px}
+.lang-btn{background:transparent;border:1px solid var(--border);color:var(--text-muted);padding:6px 20px;border-radius:24px;cursor:pointer;font-size:13px;font-family:'Manrope',sans-serif;font-weight:700;letter-spacing:0.06em;transition:all 0.2s}
+.lang-btn.active{background:var(--gold-dim);border-color:var(--gold);color:var(--gold-light)}
+.lang-btn:hover:not(.active){border-color:rgba(255,255,255,0.28);color:var(--text)}
+.quiz-header{text-align:center;margin-bottom:32px}
+.city-badge{display:inline-flex;align-items:center;gap:8px;background:var(--gold-dim);border:1px solid rgba(212,160,23,0.38);border-radius:24px;padding:5px 20px;font-size:11px;color:var(--gold-light);letter-spacing:0.14em;text-transform:uppercase;font-weight:700;margin-bottom:18px}
+.quiz-title{font-family:'Playfair Display',serif;font-size:clamp(30px,5vw,46px);font-weight:900;line-height:1.1;color:#fff;margin-bottom:10px}
+.quiz-subtitle{font-size:15px;color:var(--text-muted);max-width:400px;margin:0 auto;line-height:1.65}
+.ornament{text-align:center;color:var(--gold);font-size:13px;letter-spacing:7px;margin-bottom:28px;opacity:0.45}
+.progress-wrap{margin-bottom:22px}
+.progress-info{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--text-dim);margin-bottom:9px}
+.score-pill{display:flex;align-items:center;gap:6px;background:var(--gold-dim);border:1px solid rgba(212,160,23,0.32);border-radius:20px;padding:3px 13px;color:var(--gold-light);font-weight:700;font-size:13px}
+.score-dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.progress-bar{height:4px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:4px;transition:width 0.5s ease}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 28px 26px;margin-bottom:14px}
+.q-category{font-size:11px;text-transform:uppercase;letter-spacing:0.13em;color:var(--gold);font-weight:700;margin-bottom:12px}
+.q-text{font-size:18px;font-weight:600;line-height:1.5;color:#fff;margin-bottom:24px}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.options-grid{grid-template-columns:1fr}}
+.opt-btn{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:14px;padding:16px 16px 16px 18px;color:#e8e4df;font-family:'Manrope',sans-serif;font-size:14px;font-weight:500;cursor:pointer;text-align:left;line-height:1.45;transition:all 0.18s;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;min-height:60px}
+.opt-text{flex:1}
+.opt-icon{font-size:15px;line-height:1;flex-shrink:0;margin-top:1px;min-width:16px;text-align:right}
+.opt-btn:hover:not(:disabled){background:rgba(212,160,23,0.13);border-color:rgba(212,160,23,0.5);color:#fff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}
+.opt-btn:disabled{cursor:default;transform:none!important;box-shadow:none!important}
+.opt-btn.correct{background:var(--green-bg);border-color:var(--green-border);color:#a8f0c0}
+.opt-btn.wrong{background:var(--red-bg);border-color:var(--red-border);color:#f8b0b0}
+.feedback-box{border-radius:16px;padding:16px 20px;margin-bottom:14px;display:none}
+.feedback-box.correct{background:var(--green-bg);border:1px solid var(--green-border);display:block}
+.feedback-box.wrong{background:var(--red-bg);border:1px solid var(--red-border);display:block}
+.feedback-label{font-weight:700;font-size:15px;margin-bottom:7px}
+.feedback-box.correct .feedback-label{color:#7ee8a2}
+.feedback-box.wrong .feedback-label{color:#f8b0b0}
+.fb-fact{color:rgba(240,237,232,0.82);font-size:14px;line-height:1.65}
+.next-btn{width:100%;padding:16px;border-radius:14px;border:none;background:linear-gradient(135deg,#b8780c,#d4a017,#e8c040);color:#1a0e00;font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s;display:none;letter-spacing:0.02em;box-shadow:0 4px 20px rgba(212,160,23,0.3)}
+.next-btn.visible{display:block}
+.next-btn:hover{opacity:0.92;transform:translateY(-2px)}
+.result-screen{display:none;text-align:center;padding:8px 0}
+.result-screen.visible{display:block}
+.result-stars{font-size:30px;letter-spacing:6px;margin-bottom:22px;color:var(--gold)}
+.result-circle{width:128px;height:128px;border-radius:50%;border:3px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 26px;background:var(--gold-dim);position:relative}
+.result-circle::before{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid rgba(212,160,23,0.22)}
+.result-score-num{font-family:'Playfair Display',serif;font-size:42px;font-weight:900;color:var(--gold-light);line-height:1}
+.result-score-total{font-size:13px;color:var(--text-dim);font-weight:500;margin-top:2px}
+.result-title{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:#fff;margin-bottom:12px}
+.result-desc{font-size:15px;color:var(--text-muted);line-height:1.65;max-width:400px;margin:0 auto 32px}
+.restart-btn{padding:14px 44px;border-radius:14px;border:2px solid var(--gold);background:transparent;color:var(--gold-light);font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.restart-btn:hover{background:var(--gold-dim)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="page-layout">
+  
+  <main class="main-col">
+    <div class="lang-bar">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('ru')">RU</button>
+    </div>
+    <header class="quiz-header">
+      <div class="city-badge">★ &nbsp;Perm · Пермь&nbsp; ★</div>
+      <h1 class="quiz-title" id="main-title">Discover Perm</h1>
+      <p class="quiz-subtitle" id="main-sub">How well do you know Russia's gateway to the Urals?</p>
+    </header>
+    <div class="ornament">— · —</div>
+    <div id="quiz-main">
+      <div class="progress-wrap">
+        <div class="progress-info">
+          <span id="q-counter">Question 1 / 10</span>
+          <div class="score-pill"><div class="score-dot"></div><span id="score-label">0 pts</span></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:10%"></div></div>
+      </div>
+      <div class="card">
+        <div class="q-category" id="q-cat"></div>
+        <div class="q-text" id="q-text"></div>
+        <div class="options-grid" id="options-grid"></div>
+      </div>
+      <div class="feedback-box" id="feedback-box">
+        <div class="feedback-label" id="fb-label"></div>
+        <div class="fb-fact" id="fb-text"></div>
+      </div>
+      <button class="next-btn" id="next-btn" onclick="nextQ()"></button>
+    </div>
+    <div class="result-screen" id="result-screen">
+      <div class="result-stars" id="result-stars"></div>
+      <div class="result-circle">
+        <div class="result-score-num" id="res-num">0</div>
+        <div class="result-score-total" id="res-total">/ 10</div>
+      </div>
+      <div class="result-title" id="res-title"></div>
+      <div class="result-desc" id="res-desc"></div>
+      <button class="restart-btn" id="restart-btn" onclick="restart()"></button>
+    </div>
+  </main>
+  
+</div>
+<script>
+var T = {
+  en: {
+    mainTitle:'Discover Perm',
+    mainSub:"How well do you know Russia's gateway to the Urals?",
+    question:'Question',of:'/',score:'pts',
+    correct:'✓ Correct!',wrong:'✗ Not quite!',
+    next:'Next question →',finish:'See results →',
+    playAgain:'Play again',
+    results:['Novice Explorer','Perm Curious','Ural Enthusiast','True Permyak!'],
+    resultDesc:[
+      "You're just starting your journey. Perm has so much to offer — come explore!",
+      'You know the basics. Time to dive deeper into this fascinating city!',
+      'Impressive! You clearly have a passion for Perm and the Ural region.',
+      'Extraordinary! You could be a local guide. Perm is proud of you!'
+    ]
+  },
+  ru: {
+    mainTitle:'Открой Пермь',
+    mainSub:'Насколько хорошо ты знаешь ворота в Урал?',
+    question:'Вопрос',of:'/',score:'очк.',
+    correct:'✓ Верно!',wrong:'✗ Не совсем!',
+    next:'Следующий вопрос →',finish:'Результаты →',
+    playAgain:'Играть снова',
+    results:['Начинающий','Любопытный','Знаток Урала','Настоящий пермяк!'],
+    resultDesc:[
+      'Ты только начинаешь своё путешествие. Пермь ждёт тебя!',
+      'Базовые знания есть. Пора исследовать город глубже!',
+      'Впечатляет! Ты явно увлечён Пермью и Уралом.',
+      'Невероятно! Ты мог бы быть местным гидом. Пермь гордится тобой!'
+    ]
+  }
+};
+
+var questions = [
+  {cat:{en:'Geography',ru:'География'},q:{en:'Perm is located on the banks of which major river?',ru:'На берегах какой крупной реки расположена Пермь?'},opts:{en:['Kama River','Volga River','Oka River','Ural River'],ru:['Кама','Волга','Ока','Урал']},ans:0,fact:{en:'Perm sits on the Kama River, one of the largest rivers in Russia and Europe. The Kama is a major tributary of the Volga.',ru:'Пермь стоит на реке Кама — одной из крупнейших рек России. Кама является главным притоком Волги.'}},
+  {cat:{en:'History',ru:'История'},q:{en:'In what year was the city of Perm officially founded?',ru:'В каком году официально основана Пермь?'},opts:{en:['1723','1781','1800','1650'],ru:['1723','1781','1800','1650']},ans:0,fact:{en:'Perm was founded in 1723 when Vasily Tatishchev oversaw construction of a copper smelting plant. It became an official city in 1781.',ru:'Пермь основана в 1723 году, когда Василий Татищев основал медеплавильный завод. Статус города получила в 1781 году.'}},
+  {cat:{en:'Culture',ru:'Культура'},q:{en:'Which famous cultural institution is Perm known for globally?',ru:'Какое всемирно известное учреждение культуры есть в Перми?'},opts:{en:['Perm Opera & Ballet Theatre','Mariinsky Theatre','Bolshoi Theatre','Novosibirsk Opera'],ru:['Театр оперы и балета','Мариинский театр','Большой театр','Новосибирская опера']},ans:0,fact:{en:"The Perm Opera and Ballet Theatre is one of Russia's finest. Under Teodor Currentzis it became internationally acclaimed for extraordinary performances.",ru:'Пермский театр оперы и балета — один из лучших в России. Под руководством Теодора Курентзиса стал международно известным.'}},
+  {cat:{en:'Nature',ru:'Природа'},q:{en:'The Usva Pillars are massive limestone cliffs in the Perm region. On which river do they stand?',ru:'Усьвинские столбы — огромные известняковые скалы Пермского края. На какой реке они стоят?'},opts:{en:['Kama','Chusovaya','Usva','Sylva'],ru:['Кама','Чусовая','Усьва','Сылва']},ans:2,fact:{en:'The Usva Pillars rise up to 120 m above the Usva River. Nearby lies "Stone City" — a maze of weathered rocks resembling medieval ruins, one of the most visited natural sites in the Perm region.',ru:'Усьвинские столбы поднимаются до 120 м над рекой Усьва. Рядом — «Каменный город»: лабиринт выветренных скал, напоминающих средневековые руины. Одно из самых популярных мест Пермского края.'}},
+  {cat:{en:'Geography',ru:'География'},q:{en:'Perm is considered the gateway to which mountain range — the natural border between Europe and Asia?',ru:'Пермь — ворота в какой горный хребет, являющийся границей Европы и Азии?'},opts:{en:['The Alps','The Caucasus','The Urals','The Altai'],ru:['Альпы','Кавказ','Урал','Алтай']},ans:2,fact:{en:'Perm is the largest city near the Ural Mountains, which form the natural boundary between Europe and Asia, making it the true "gateway to the Urals."',ru:'Пермь — крупнейший город вблизи Уральских гор, образующих границу Европы и Азии. Поэтому Пермь — «ворота в Урал».'}},
+  {cat:{en:'Science',ru:'Наука'},q:{en:'The "Permian" geological period is named after this city. When did it begin approximately?',ru:'Пермский геологический период назван в честь города. Когда он начался?'},opts:{en:['66 million years ago','145 million years ago','252 million years ago','299 million years ago'],ru:['66 млн лет назад','145 млн лет назад','252 млн лет назад','299 млн лет назад']},ans:3,fact:{en:'The Permian Period began ~299 million years ago. It was named by Scottish geologist Roderick Murchison after studying rock strata near Perm in 1841.',ru:'Пермский период начался ~299 млн лет назад. Назван геологом Родериком Мурчисоном после изучения горных пород у Перми в 1841 году.'}},
+  {cat:{en:'Art & History',ru:'Искусство и история'},q:{en:'The Perm region is famous for an ancient art style on bronze plaques depicting fantastical composite beasts. What is it called?',ru:'Пермский край знаменит древним художественным стилем на бронзовых пластинах с фантастическими существами. Как он называется?'},opts:{en:['Perm Gods','Perm Animal Style','Kama Bronze','Ural Totemism'],ru:['Пермские боги','Пермский звериный стиль','Камская бронза','Уральский тотемизм']},ans:1,fact:{en:'Perm Animal Style (6th c. BC – 12th c. AD) features bronze plaques with composite creatures — bear-eagles, serpent-men — reflecting Finno-Ugric cosmology. The finest collection is in the Perm Regional Museum.',ru:'Пермский звериный стиль (VI в. до н.э. — XII в. н.э.) — бронзовые пластины с существами-химерами: медведе-орлами, людьми-змеями. Лучшая коллекция — в Пермском краеведческом музее.'}},
+  {cat:{en:'Facts',ru:'Факты'},q:{en:'What is the approximate population of Perm?',ru:'Каково примерное население Перми?'},opts:{en:['About 500,000','About 1 million','About 2 million','About 300,000'],ru:['Около 500 000','Около 1 миллиона','Около 2 миллионов','Около 300 000']},ans:1,fact:{en:"Perm has approximately 1 million residents, making it one of Russia's fifteen largest cities and an important cultural centre.",ru:'Население Перми — около 1 миллиона человек. Один из 15 крупнейших городов России и важный культурный центр.'}},
+  {cat:{en:'Tourism',ru:'Туризм'},q:{en:'The Kungur Ice Cave is near Perm. What makes it extraordinary?',ru:'Кунгурская ледяная пещера рядом с Пермью. Чем она удивительна?'},opts:{en:["World's deepest cave","Year-round ice & 70 underground lakes","Active volcanic cave","Dinosaur fossil site"],ru:['Самая глубокая пещера','Лёд круглый год и 70 озёр','Вулканическая пещера','Место находок динозавров']},ans:1,fact:{en:"The Kungur Ice Cave features year-round ice stalactites and 70 underground lakes — one of Russia's most visited natural attractions.",ru:'Кунгурская пещера поражает круглогодичным льдом и 70 подземными озёрами. Одна из самых посещаемых достопримечательностей России.'}},
+  {cat:{en:'University',ru:'Университет'},q:{en:'Which top Russian research university has a major campus in Perm?',ru:'Какой ведущий российский исследовательский университет имеет крупный кампус в Перми?'},opts:{en:['HSE University','Moscow State University','ITMO University','Ural Federal University'],ru:['НИУ ВШЭ','МГУ','ИТМО','УрФУ']},ans:0,fact:{en:'HSE University (Higher School of Economics) has a major campus in Perm — HSE Perm — offering world-class programmes in economics, humanities, and social sciences.',ru:'НИУ ВШЭ имеет крупный кампус в Перми — ВШЭ Пермь — с программами по экономике, гуманитарным и социальным наукам.'}}
+];
+
+var lang='en', current=0, score=0, answered=false;
+  
+function setLang(l){
+  lang=l;
+  document.querySelectorAll('.lang-btn').forEach(function(b,i){
+    b.classList.toggle('active',(i===0&&l==='en')||(i===1&&l==='ru'));
+  });
+  document.getElementById('main-title').textContent=T[l].mainTitle;
+  document.getElementById('main-sub').textContent=T[l].mainSub;
+  document.getElementById('restart-btn').textContent=T[l].playAgain;
+  renderQ();
+}
+
+function renderQ(){
+  var q=questions[current],l=lang,total=questions.length;
+  document.getElementById('q-counter').textContent=T[l].question+' '+(current+1)+' '+T[l].of+' '+total;
+  document.getElementById('score-label').textContent=score+' '+T[l].score;
+  document.getElementById('prog-fill').style.width=((current+1)/total*100)+'%';
+  document.getElementById('q-cat').textContent=q.cat[l];
+  document.getElementById('q-text').textContent=q.q[l];
+  var grid=document.getElementById('options-grid');
+  grid.innerHTML='';
+  q.opts[l].forEach(function(opt,i){
+    var btn=document.createElement('button');
+    btn.className='opt-btn';
+    btn.innerHTML='<span class="opt-text">'+opt+'</span><span class="opt-icon"></span>';
+    btn.onclick=function(){pick(i)};
+    grid.appendChild(btn);
+  });
+  document.getElementById('feedback-box').className='feedback-box';
+  var nb=document.getElementById('next-btn');
+  nb.className='next-btn';
+  nb.textContent=(current===questions.length-1)?T[l].finish:T[l].next;
+  answered=false;
+}
+
+function pick(idx){
+  if(answered)return;
+  answered=true;
+  var q=questions[current],l=lang,ok=idx===q.ans;
+  if(ok)score++;
+  document.querySelectorAll('.opt-btn').forEach(function(btn,i){
+    btn.disabled=true;
+    var icon=btn.querySelector('.opt-icon');
+    if(i===q.ans){btn.classList.add('correct');icon.textContent='✓';}
+    else if(i===idx&&!ok){btn.classList.add('wrong');icon.textContent='✗';}
+  });
+  var fb=document.getElementById('feedback-box');
+  fb.className='feedback-box '+(ok?'correct':'wrong');
+  document.getElementById('fb-label').textContent=ok?T[l].correct:T[l].wrong;
+  document.getElementById('fb-text').textContent=q.fact[l];
+  document.getElementById('score-label').textContent=score+' '+T[l].score;
+  document.getElementById('next-btn').className='next-btn visible';
+}
+
+function nextQ(){
+  current++;
+  if(current>=questions.length)showResult();else renderQ();
+}
+
+function showResult(){
+  document.getElementById('quiz-main').classList.add('hidden');
+  document.getElementById('result-screen').classList.add('visible');
+  var pct=score/questions.length;
+  var tier=pct<0.3?0:pct<0.6?1:pct<0.9?2:3;
+  var stars=['★☆☆☆','★★☆☆','★★★☆','★★★★'][tier];
+  var l=lang;
+  document.getElementById('result-stars').textContent=stars;
+  document.getElementById('res-num').textContent=score;
+  document.getElementById('res-total').textContent='/ '+questions.length;
+  document.getElementById('res-title').textContent=T[l].results[tier];
+  document.getElementById('res-desc').textContent=T[l].resultDesc[tier];
+  document.getElementById('restart-btn').textContent=T[l].playAgain;
+}
+
+function restart(){
+  current=0;score=0;answered=false;
+  document.getElementById('result-screen').classList.remove('visible');
+  document.getElementById('quiz-main').classList.remove('hidden');
+  renderQ();
+}
+
+function buildSidebars(){}
+
+window.onload = function(){ renderQ(); };
+</script>
+</body>
+</html>
